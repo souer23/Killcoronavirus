@@ -1,89 +1,106 @@
-import tkinter
-from tkinter import *
-from tkinter import messagebox
+from getpass import getpass
 import pymysql
+from fun_admin import * 
+from fun_medico import *
 
-def menu_pantalla():
-    global pantalla
-    pantalla = Tk()
-    pantalla.geometry("400x460")
-    pantalla.title("Sistema Medico KillCoronaVirus")
-    pantalla.iconbitmap("logo.ico")
+def connect_to_database():
+    return pymysql.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="killcoronavirus"
+    )
 
-    image = PhotoImage(file = "logo.gif")
-    image = image.subsample(4,4)
-    label = Label(image = image)
-    label.pack()
+    try:
+        connection = connect_to_database()
+        with connection.cursor() as cursor:
+            id_medicamento = int(input("Ingrese el ID del medicamento a eliminar: "))
+            sql = "DELETE FROM `medicamento` WHERE `ID_Medicamento` = %s"
+            cursor.execute(sql, id_medicamento)
+        connection.commit()
+        print("Medicamento eliminado con éxito.")
+    except pymysql.MySQLError as e:
+        print("Error al eliminar el medicamento:", e)
+    finally:
+        connection.close()
 
-    Label(text = "Acceso al Sistema", bg = "Teal", fg = "White", width = "300", height = "3", font=("Verdana", 12)).pack()
-    Label(text="").pack()
+def menu_administrador():
+    while True:
+        print("\nMenú de administrador:")
+        print("1. Mantenimiento Medicamentos")
+        print("2. Mantenimiento Especialidades")
+        print("3. Mantenimiento Medicos")
+        print("4. Mantenimiento Examenes")
+        print("5. Salir")
+        opcion = input("Seleccione una opción: ")
 
-    Button(text = "Iniciar Sesion", height = "3", width = "30", command = iniciar_sesion_doctor).pack()
-    Label(text = "").pack()
-    Button(text = "Perfil Administrador", height = "3", width = "30", command = iniciar_sesion_admin).pack()
+        if opcion == "1":
+            mantenimiento_medicamentos()
+        elif opcion == "2":
+            mantenimiento_especialidades()
+        elif opcion == "3":
+            mantenimiento_medicos()
+        elif opcion == "4":
+            mantenimiento_examenes()
+        elif opcion == "5":
+            print("Saliendo del sistema...")
+            break
+        else:
+            print("Opción no válida. Por favor, seleccione una opción válida.")
 
-    pantalla.mainloop()
+# Funciones de médico
+def menu_medico():
+    while True:
+        print("\nMenú de medico:")
+        print("1. Generar nueva anamnesis")
+        print("2. Generar nuevo diagnostico")
+        print("3. Recetar medicamentos")
+        print("4. Recetar examenes")
+        print("5. Salir")
+        opcion = input("Seleccione una opción: ")
 
-def iniciar_sesion_doctor():
-    global pantalla1
-    pantalla1 = Toplevel(pantalla)
-    pantalla1.geometry("400x250")
-    pantalla1.title("Inicio de Sesion")
-    pantalla1.iconbitmap("logo.ico")
+        if opcion == "1":
+            generar_anamnesis()
+        elif opcion == "2":
+            generar_diagnostico()
+        elif opcion == "3":
+            recetar_medicamentos()
+        elif opcion == "4":
+            recetar_examenes()
+        elif opcion == "5":
+            print("Saliendo del sistema...")
+            break
+        else:
+            print("Opción no válida. Por favor, seleccione una opción válida.")
 
-    Label(pantalla1,text = "Por favor ingrese usuario y contraseña de Medico.",  bg = "Teal", fg = "White", width = "300", height = "3", font=("Verdana", 10)).pack()
-    Label(pantalla1, text="").pack()
+def login():
+    print("Bienvenido al sistema de salud KillCoronaVirus.")
+    print("")
+    print("Por favor, ingrese sus credenciales:")
+    print("")
+    username = input("Nombre de usuario: ")
+    password = getpass.getpass("Contraseña: ")
 
-    global nombre_Medico_verify
-    global contraseña_Medico_verify
+    connection = connect_to_database()
+    cursor = connection.cursor()
 
-    nombre_Medico_verify = StringVar()
-    contraseña_Medico_verify = StringVar()
-    
-    global nombre_Medico_entry
-    global contraseña_Medico_entry 
+    query = "SELECT ID_TipoUsuario FROM login WHERE nombre_usuario = %s AND contraseña = %s"
+    cursor.execute(query, (username, password))
+    result = cursor.fetchone()
 
-    Label(pantalla1, text = "Usuario").pack()
-    nombre_Medico_entry = Entry (pantalla1, textvariable = nombre_Medico_verify)
-    nombre_Medico_entry.pack()
-    Label(pantalla1).pack()
+    if result:
+        tipo_usuario = result[0]
+        if tipo_usuario == 1:
+            menu_administrador()
+        elif tipo_usuario == 2:
+            menu_medico()
+        else:
+            print("Tipo de usuario no válido.")
+    else:
+        print("Nombre de usuario o contraseña incorrectos.")
 
-    Label(pantalla1, text = "Contraseña").pack()
-    contraseña_Medico_entry = Entry (pantalla1, textvariable = contraseña_Medico_verify)
-    contraseña_Medico_entry.pack()
-    Label(pantalla1).pack()
+    cursor.close()
+    connection.close()
 
-    Button(pantalla1, text = "Iniciar Sesion").pack()
-
-
-def iniciar_sesion_admin():
-    global pantalla1
-    pantalla1 = Toplevel(pantalla)
-    pantalla1.geometry("400x250")
-    pantalla1.title("Inicio de Sesion")
-    pantalla1.iconbitmap("logo.ico")
-
-    Label(pantalla1,text = "Por favor ingrese usuario y contraseña de Administrador.",  bg = "Teal", fg = "White", width = "300", height = "3", font=("Verdana", 10)).pack()
-    Label(pantalla1, text="").pack()
-
-    global nombre_Admin_verify
-    global contraseña_Admin_verify
-
-    nombre_Admin_verify = StringVar()
-    contraseña_Admin_verify = StringVar()
-    
-    global nombre_admin_entry
-    global contraseña_admin_entry 
-
-    Label(pantalla1, text = "Usuario").pack()
-    nombre_admin_entry = Entry (pantalla1, textvariable = nombre_Admin_verify)
-    nombre_admin_entry.pack()
-    Label(pantalla1).pack()
-
-    Label(pantalla1, text = "Contraseña").pack()
-    contraseña_admin_entry = Entry (pantalla1, textvariable = contraseña_Admin_verify)
-    contraseña_admin_entry.pack()
-    Label(pantalla1).pack()
-
-    Button(pantalla1, text = "Iniciar Sesion").pack()
-menu_pantalla()
+if __name__ == "__main__":
+    login()
