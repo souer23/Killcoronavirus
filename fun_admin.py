@@ -56,7 +56,7 @@ def mostrar_medicamentos():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM `medicamento`"
+            sql = "SELECT * FROM `medicamento` WHERE `activo` = 1"
             cursor.execute(sql)
             medicamentos = cursor.fetchall()
             print("Listado de medicamentos:")
@@ -91,10 +91,10 @@ def eliminar_medicamento():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_medicamento = int(input("Ingrese el ID del medicamento a eliminar: "))
-            sql = "DELETE FROM `medicamento` WHERE `ID_Medicamento` = %s"
-            cursor.execute(sql, id_medicamento)
+            sql = "UPDATE `medicamento` SET `activo` = 0 WHERE `ID_Medicamento` = %s"
+            cursor.execute(sql, (id_medicamento,))
         connection.commit()
-        print("Medicamento eliminado con éxito.")
+        print("Medicamento eliminado (lógicamente) con éxito.")
     except pymysql.MySQLError as e:
         print("Error al eliminar el medicamento:", e)
     finally:
@@ -146,7 +146,7 @@ def mostrar_especialidades():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM `especialidad`"
+            sql = "SELECT * FROM `especialidad` WHERE `activo` = 1"
             cursor.execute(sql)
             especialidades = cursor.fetchall()
             print("Listado de especialidades:")
@@ -180,10 +180,10 @@ def eliminar_especialidad():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_especialidad = int(input("Ingrese el ID de la especialidad a eliminar: "))
-            sql = "DELETE FROM `especialidad` WHERE `ID_Especialidad` = %s"
+            sql = "UPDATE `especialidad` SET `activo` = 0 WHERE `ID_Especialidad` = %s"
             cursor.execute(sql, (id_especialidad,))
         connection.commit()
-        print("Especialidad eliminada con éxito.")
+        print("Especialidad eliminada (lógicamente) con éxito.")
     except pymysql.MySQLError as e:
         print("Error al eliminar la especialidad:", e)
     finally:
@@ -370,7 +370,7 @@ def mostrar_examenes():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM `examen`"
+            sql = "SELECT * FROM `examen` WHERE `activo` = 1"
             cursor.execute(sql)
             examenes = cursor.fetchall()
             print("Listado de exámenes:")
@@ -405,10 +405,10 @@ def eliminar_examen():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_examen = int(input("Ingrese el ID del examen a eliminar: "))
-            sql = "DELETE FROM `examen` WHERE `ID_Examen` = %s"
+            sql = "UPDATE `examen` SET `activo` = 0 WHERE `ID_Examen` = %s"
             cursor.execute(sql, (id_examen,))
-        connection.commit()
-        print("Examen eliminado con éxito.")
+            connection.commit()
+            print("Examen eliminado (lógicamente) con éxito.")
     except pymysql.MySQLError as e:
         print("Error al eliminar el examen:", e)
     finally:
