@@ -11,19 +11,6 @@ def connect_to_database():
         database="killcoronavirus"
     )
 
-    try:
-        connection = connect_to_database()
-        with connection.cursor() as cursor:
-            id_medicamento = int(input("Ingrese el ID del medicamento a eliminar: "))
-            sql = "DELETE FROM `medicamento` WHERE `ID_Medicamento` = %s"
-            cursor.execute(sql, id_medicamento)
-        connection.commit()
-        print("Medicamento eliminado con éxito.")
-    except pymysql.MySQLError as e:
-        print("Error al eliminar el medicamento:", e)
-    finally:
-        connection.close()
-
 def menu_administrador():
     while True:
         print("\nMenú de administrador:")
@@ -84,7 +71,7 @@ def login():
     connection = connect_to_database()
     cursor = connection.cursor()
 
-    query = "SELECT ID_TipoUsuario FROM login WHERE nombre_usuario = %s AND contraseña = %s"
+    query = "SELECT ID_TipoUsuario FROM login WHERE Usuario = %s AND Password = %s"
     cursor.execute(query, (username, password))
     result = cursor.fetchone()
 

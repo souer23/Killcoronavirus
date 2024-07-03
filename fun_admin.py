@@ -224,19 +224,38 @@ def crear_medico():
             nombre = input("Ingrese el nombre del profesional: ")
             apellido = input("Ingrese el apellido del profesional: ")
             telefono = input("Ingrese el teléfono del profesional: ")
-            id_especialidad = int(input("Ingrese el ID de la especialidad del profesional: "))
             id_tipo_usuario = int(input("Ingrese el ID del tipo de usuario del profesional: "))
 
             # Insertar el nuevo profesional en la tabla `profesional`
             sql_profesional = """
-                INSERT INTO `profesional` (`RUT`, `Nombre`, `Apellido`, `Telefono`, `ID_Especialidad`, `ID_TipoUsuario`)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO `profesional` (`RUT`, `Nombre`, `Apellido`, `Telefono`, `ID_TipoUsuario`, `activo`)
+                VALUES (%s, %s, %s, %s, %s, 1)
             """
-            cursor.execute(sql_profesional, (rut, nombre, apellido, telefono, id_especialidad, id_tipo_usuario))
+            cursor.execute(sql_profesional, (rut, nombre, apellido, telefono, id_tipo_usuario))
             connection.commit()
 
             # Obtener el ID del profesional recién agregado
             id_profesional = cursor.lastrowid
+
+            # Variable para controlar la inserción de especialidades
+            agregar_especialidad = True
+
+            while agregar_especialidad:
+                # Solicitar el ID de la especialidad del profesional
+                id_especialidad = int(input("Ingrese el ID de la especialidad del profesional: "))
+
+                # Insertar la especialidad del profesional en la tabla `profesional_especialidad`
+                sql_profesional_especialidad = """
+                    INSERT INTO `profesional_especialidad` (`ID_Profesional`, `ID_Especialidad`)
+                    VALUES (%s, %s)
+                """
+                cursor.execute(sql_profesional_especialidad, (id_profesional, id_especialidad))
+                connection.commit()
+
+                # Preguntar si desea agregar otra especialidad
+                respuesta = input("¿Desea agregar otra especialidad? (s/n): ").lower()
+                if respuesta != 's':
+                    agregar_especialidad = False
 
             # Solicitar el nombre de usuario y la contraseña para el login
             nombre_usuario = input("Ingrese el nombre de usuario para el login: ")
@@ -261,26 +280,25 @@ def mostrar_medicos():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM `profesional` WHERE `activo` = 1"
+            sql = """
+                SELECT p.ID_Profesional, p.RUT, p.Nombre, p.Apellido, p.Telefono, 
+                       GROUP_CONCAT(e.Nombre_Especialidad SEPARATOR ', ') AS Especialidades
+                FROM profesional p
+                LEFT JOIN profesional_especialidad pe ON p.ID_Profesional = pe.ID_Profesional
+                LEFT JOIN especialidad e ON pe.ID_Especialidad = e.ID_Especialidad
+                WHERE p.activo = 1
+                GROUP BY p.ID_Profesional
+            """
             cursor.execute(sql)
-            medicos = cursor.fetchall()
-            
-            if medicos:
-                print("Listado de médicos:")
-                table = BeautifulTable()
-                table.columns.header = ["ID", "RUT", "Nombre", "Apellido", "Teléfono", "Especialidad", "Tipo Usuario"]
-                for medico in medicos:
-                    table.rows.append([
-                        medico['ID_Profesional'], medico['RUT'], medico['Nombre'], 
-                        medico['Apellido'], medico['Telefono'], medico['ID_Especialidad'], 
-                        medico['ID_TipoUsuario']
-                    ])
-                print(table)
-            else:
-                print("No hay médicos registrados o activos.")
-                
+            profesionales = cursor.fetchall()
+            print("Listado de profesionales:")
+            table = BeautifulTable()
+            table.columns.header = ["ID", "RUT", "Nombre", "Apellido", "Teléfono", "Especialidades"]
+            for profesional in profesionales:
+                table.rows.append(profesional)
+            print(table)
     except pymysql.MySQLError as e:
-        print("Error al obtener los médicos:", e)
+        print("Error al obtener los profesionales:", e)
     finally:
         connection.close()
 
