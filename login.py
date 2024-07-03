@@ -10,7 +10,6 @@ def connect_to_database():
         password="",
         database="killcoronavirus"
     )
-
 def menu_administrador():
     while True:
         print("\nMenú de administrador:")
