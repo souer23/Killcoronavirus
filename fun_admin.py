@@ -2,6 +2,7 @@ import getpass
 import pymysql
 from beautifultable import BeautifulTable
 
+#Conexion base de datos
 def connect_to_database():
     return pymysql.connect(
         host="localhost",
@@ -10,7 +11,32 @@ def connect_to_database():
         database="killcoronavirus"
     )
 
-#Medicamentos
+#Menu donde el administrador puede escoger de varias funciones
+def menu_administrador():
+    while True:
+        print("\nMenú de administrador:")
+        print("1. Mantenimiento Medicamentos")
+        print("2. Mantenimiento Especialidades")
+        print("3. Mantenimiento Medicos")
+        print("4. Mantenimiento Examenes")
+        print("5. Salir")
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            mantenimiento_medicamentos()
+        elif opcion == "2":
+            mantenimiento_especialidades()
+        elif opcion == "3":
+            mantenimiento_medicos()
+        elif opcion == "4":
+            mantenimiento_examenes()
+        elif opcion == "5":
+            print("Saliendo del sistema...")
+            return
+        else:
+            print("Opción no válida. Por favor, seleccione una opción válida.")
+
+#Funcion CRUD completo para tabla Medicamentos
 def mantenimiento_medicamentos():
     while True:
         print("\nMenú de Mantenimiento de Medicamentos:")
@@ -41,8 +67,17 @@ def crear_medicamento():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            nombre = input("Ingrese el nombre del medicamento: ")
-            descripcion = input("Ingrese la descripción del medicamento: ")
+            while True:
+                nombre = input("Ingrese el nombre del medicamento: ").strip()
+                if not nombre:
+                    print("El nombre del medicamento no puede estar vacío.")
+                    continue
+                
+                descripcion = input("Ingrese la descripción del medicamento: ").strip()
+                if not descripcion:
+                    print("La descripción no puede estar vacía.")
+                    continue
+                break
             sql = "INSERT INTO `medicamento` (`Nombre`, `Descripcion`) VALUES (%s, %s)"
             cursor.execute(sql, (nombre, descripcion))
         connection.commit()
@@ -75,8 +110,16 @@ def actualizar_medicamento():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_medicamento = int(input("Ingrese el ID del medicamento a actualizar: "))
-            nombre = input("Ingrese el nuevo nombre del medicamento: ")
-            descripcion = input("Ingrese la nueva descripción del medicamento: ")
+            while True:
+                nombre = input("Ingrese el nuevo nombre del medicamento: ").strip()
+                if not nombre:
+                    print("El nombre del medicamento no puede estar vacío.")
+                    continue
+                descripcion = input("Ingrese la nueva descripción del medicamento: ").strip()
+                if not descripcion:
+                    print("La descripción no puede estar vacía.")
+                    continue
+                break
             sql = "UPDATE `medicamento` SET `Nombre` = %s, `Descripcion` = %s WHERE `ID_Medicamento` = %s"
             cursor.execute(sql, (nombre, descripcion, id_medicamento))
         connection.commit()
@@ -94,14 +137,14 @@ def eliminar_medicamento():
             sql = "UPDATE `medicamento` SET `activo` = 0 WHERE `ID_Medicamento` = %s"
             cursor.execute(sql, (id_medicamento,))
         connection.commit()
-        print("Medicamento eliminado (lógicamente) con éxito.")
+        print("Medicamento eliminado con éxito del sistema.")
     except pymysql.MySQLError as e:
         print("Error al eliminar el medicamento:", e)
     finally:
         connection.close()
 
 
-#Especialidades
+#Funcion CRUD completo para tabla Especialidades
 def mantenimiento_especialidades():
     while True:
         print("\nMenú de Mantenimiento de Especialidades:")
@@ -132,7 +175,12 @@ def crear_especialidad():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            nombre_especialidad = input("Ingrese el nombre de la especialidad: ")
+            while True:
+                nombre_especialidad = input("Ingrese el nombre de la especialidad: ").strip()
+                if not nombre_especialidad:
+                    print("El nombre de la especialidad no puede estar vacío.")
+                    continue
+                break
             sql = "INSERT INTO `especialidad` (`Nombre_Especialidad`) VALUES (%s)"
             cursor.execute(sql, (nombre_especialidad,))
         connection.commit()
@@ -165,7 +213,12 @@ def actualizar_especialidad():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_especialidad = int(input("Ingrese el ID de la especialidad a actualizar: "))
-            nombre_especialidad = input("Ingrese el nuevo nombre de la especialidad: ")
+            while True:
+                nombre_especialidad = input("Ingrese el nuevo nombre de la especialidad: ").strip()
+                if not nombre_especialidad:
+                    print("El nombre de la especialidad no puede estar vacío.")
+                    continue
+                break
             sql = "UPDATE `especialidad` SET `Nombre_Especialidad` = %s WHERE `ID_Especialidad` = %s"
             cursor.execute(sql, (nombre_especialidad, id_especialidad))
         connection.commit()
@@ -183,14 +236,14 @@ def eliminar_especialidad():
             sql = "UPDATE `especialidad` SET `activo` = 0 WHERE `ID_Especialidad` = %s"
             cursor.execute(sql, (id_especialidad,))
         connection.commit()
-        print("Especialidad eliminada (lógicamente) con éxito.")
+        print("Especialidad eliminada con éxito del sistema.")
     except pymysql.MySQLError as e:
         print("Error al eliminar la especialidad:", e)
     finally:
         connection.close()
 
 
-#Medicos
+#Funcion CRUD completo para tabla Medicos
 def mantenimiento_medicos():
     while True:
         print("\nMenú de Mantenimiento de Médicos:")
@@ -219,58 +272,67 @@ def crear_medico():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            # Solicitar los datos del nuevo profesional
-            rut = input("Ingrese el RUT del profesional: ")
-            nombre = input("Ingrese el nombre del profesional: ")
-            apellido = input("Ingrese el apellido del profesional: ")
-            telefono = input("Ingrese el teléfono del profesional: ")
-            id_tipo_usuario = int(input("Ingrese el ID del tipo de usuario del profesional: "))
-
-            # Insertar el nuevo profesional en la tabla `profesional`
+            while True:
+                rut = input("Ingrese el RUT del profesional: ").strip()
+                if not rut:
+                    print("El RUT no puede estar vacío.")
+                    continue
+                
+                nombre = input("Ingrese el nombre del profesional: ").strip()
+                if not nombre:
+                    print("El nombre no puede estar vacío.")
+                    continue
+                
+                apellido = input("Ingrese el apellido del profesional: ").strip()
+                if not apellido:
+                    print("El apellido no puede estar vacío.")
+                    continue
+                
+                telefono = input("Ingrese el teléfono del profesional: ").strip()
+                if not telefono:
+                    print("El teléfono no puede estar vacío.")
+                    continue
+                
+                id_tipo_usuario = int(input("Ingrese el ID del tipo de usuario del profesional: "))
+                break
+            
             sql_profesional = """
                 INSERT INTO `profesional` (`RUT`, `Nombre`, `Apellido`, `Telefono`, `ID_TipoUsuario`, `activo`)
                 VALUES (%s, %s, %s, %s, %s, 1)
             """
             cursor.execute(sql_profesional, (rut, nombre, apellido, telefono, id_tipo_usuario))
             connection.commit()
-
-            # Obtener el ID del profesional recién agregado
             id_profesional = cursor.lastrowid
 
-            # Variable para controlar la inserción de especialidades
             agregar_especialidad = True
-
             while agregar_especialidad:
-                # Solicitar el ID de la especialidad del profesional
                 id_especialidad = int(input("Ingrese el ID de la especialidad del profesional: "))
-
-                # Insertar la especialidad del profesional en la tabla `profesional_especialidad`
                 sql_profesional_especialidad = """
                     INSERT INTO `profesional_especialidad` (`ID_Profesional`, `ID_Especialidad`)
                     VALUES (%s, %s)
                 """
                 cursor.execute(sql_profesional_especialidad, (id_profesional, id_especialidad))
                 connection.commit()
-
-                # Preguntar si desea agregar otra especialidad
                 respuesta = input("¿Desea agregar otra especialidad? (s/n): ").lower()
                 if respuesta != 's':
                     agregar_especialidad = False
-
-            # Solicitar el nombre de usuario y la contraseña para el login
-            nombre_usuario = input("Ingrese el nombre de usuario para el login: ")
-            contrasena = input("Ingrese la contraseña para el login: ")
-
-            # Insertar el nuevo login en la tabla `login`
+            while True:
+                nombre_usuario = input("Ingrese el nombre de usuario para el login: ").strip()
+                if not nombre_usuario:
+                    print("El nombre de usuario no puede estar vacío.")
+                    continue
+                contrasena = input("Ingrese la contraseña para el login: ").strip()
+                if not contrasena:
+                    print("La contraseña no puede estar vacía.")
+                    continue
+                break
             sql_login = """
-                INSERT INTO `login` (`nombre_usuario`, `contraseña`, `ID_TipoUsuario`)
+                INSERT INTO `login` (`Usuario`, `Password`, `ID_TipoUsuario`)
                 VALUES (%s, %s, %s)
             """
             cursor.execute(sql_login, (nombre_usuario, contrasena, id_tipo_usuario))
             connection.commit()
-
             print("Profesional y login creados con éxito.")
-
     except pymysql.MySQLError as e:
         print("Error al agregar el profesional:", e)
     finally:
@@ -307,11 +369,25 @@ def actualizar_medico():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_profesional = int(input("Ingrese el ID del médico a actualizar: "))
-            nombre = input("Ingrese el nuevo nombre del médico: ")
-            apellido = input("Ingrese el nuevo apellido del médico: ")
-            telefono = input("Ingrese el nuevo teléfono del médico: ")
-            id_especialidad = int(input("Ingrese el nuevo ID de la especialidad del médico: "))
-            id_tipo_usuario = int(input("Ingrese el nuevo ID del tipo de usuario del médico: "))
+            while True:
+                nombre = input("Ingrese el nuevo nombre del médico: ").strip()
+                if not nombre:
+                    print("El nombre no puede estar vacío.")
+                    continue
+                
+                apellido = input("Ingrese el nuevo apellido del médico: ").strip()
+                if not apellido:
+                    print("El apellido no puede estar vacío.")
+                    continue
+                
+                telefono = input("Ingrese el nuevo teléfono del médico: ").strip()
+                if not telefono:
+                    print("El teléfono no puede estar vacío.")
+                    continue
+                
+                id_especialidad = int(input("Ingrese el nuevo ID de la especialidad del médico: "))
+                id_tipo_usuario = int(input("Ingrese el nuevo ID del tipo de usuario del médico: "))
+                break
             
             sql = """
                 UPDATE `profesional` 
@@ -322,7 +398,6 @@ def actualizar_medico():
             cursor.execute(sql, (nombre, apellido, telefono, id_especialidad, id_tipo_usuario, id_profesional))
             connection.commit()
             print("Médico actualizado con éxito.")
-            
     except pymysql.MySQLError as e:
         print("Error al actualizar el médico:", e)
     finally:
@@ -336,7 +411,7 @@ def eliminar_medico():
             sql = "UPDATE `profesional` SET `activo` = 0 WHERE `ID_Profesional` = %s"
             cursor.execute(sql, (id_profesional,))
             connection.commit()
-            print("Médico eliminado (lógicamente) con éxito.")
+            print("Médico eliminado con éxito del sistema.")
             
     except pymysql.MySQLError as e:
         print("Error al eliminar el médico:", e)
@@ -344,7 +419,7 @@ def eliminar_medico():
         connection.close()
 
 
-#Examenes
+#Funcion CRUD completo para tabla Examenes
 def mantenimiento_examenes():
     while True:
         print("\nMenú de Mantenimiento de Exámenes:")
@@ -373,8 +448,16 @@ def crear_examen():
     try:
         connection = connect_to_database()
         with connection.cursor() as cursor:
-            nombre = input("Ingrese el nombre del examen: ")
-            descripcion = input("Ingrese la descripción del examen: ")
+            while True:
+                nombre = input("Ingrese el nombre del examen: ").strip()
+                if not nombre:
+                    print("El nombre del examen no puede estar vacío.")
+                    continue
+                descripcion = input("Ingrese la descripción del examen: ").strip()
+                if not descripcion:
+                    print("La descripción del examen no puede estar vacía.")
+                    continue
+                break
             sql = "INSERT INTO `examen` (`Nombre`, `Descripcion`) VALUES (%s, %s)"
             cursor.execute(sql, (nombre, descripcion))
         connection.commit()
@@ -407,8 +490,16 @@ def actualizar_examen():
         connection = connect_to_database()
         with connection.cursor() as cursor:
             id_examen = int(input("Ingrese el ID del examen a actualizar: "))
-            nombre = input("Ingrese el nuevo nombre del examen: ")
-            descripcion = input("Ingrese la nueva descripción del examen: ")
+            while True:
+                nombre = input("Ingrese el nuevo nombre del examen: ").strip()
+                if not nombre:
+                    print("El nombre del examen no puede estar vacío.")
+                    continue
+                descripcion = input("Ingrese la nueva descripción del examen: ").strip()
+                if not descripcion:
+                    print("La descripción del examen no puede estar vacía.")
+                    continue
+                break
             sql = "UPDATE `examen` SET `Nombre` = %s, `Descripcion` = %s WHERE `ID_Examen` = %s"
             cursor.execute(sql, (nombre, descripcion, id_examen))
         connection.commit()
@@ -426,7 +517,7 @@ def eliminar_examen():
             sql = "UPDATE `examen` SET `activo` = 0 WHERE `ID_Examen` = %s"
             cursor.execute(sql, (id_examen,))
             connection.commit()
-            print("Examen eliminado (lógicamente) con éxito.")
+            print("Examen eliminado con éxito del sistema.")
     except pymysql.MySQLError as e:
         print("Error al eliminar el examen:", e)
     finally:

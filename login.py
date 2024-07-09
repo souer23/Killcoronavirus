@@ -10,6 +10,7 @@ def connect_to_database():
         password="",
         database="killcoronavirus"
     )
+
 def menu_administrador():
     while True:
         print("\nMenú de administrador:")
@@ -35,29 +36,6 @@ def menu_administrador():
             print("Opción no válida. Por favor, seleccione una opción válida.")
 
 # Funciones de médico
-def menu_medico():
-    while True:
-        print("\nMenú de medico:")
-        print("1. Generar nueva anamnesis")
-        print("2. Generar nuevo diagnostico")
-        print("3. Recetar medicamentos")
-        print("4. Recetar examenes")
-        print("5. Salir")
-        opcion = input("Seleccione una opción: ")
-
-        if opcion == "1":
-            generar_anamnesis()
-        elif opcion == "2":
-            generar_diagnostico()
-        elif opcion == "3":
-            recetar_medicamentos()
-        elif opcion == "4":
-            recetar_examenes()
-        elif opcion == "5":
-            print("Saliendo del sistema...")
-            break
-        else:
-            print("Opción no válida. Por favor, seleccione una opción válida.")
 
 def login():
     print("Bienvenido al sistema de salud KillCoronaVirus.")
