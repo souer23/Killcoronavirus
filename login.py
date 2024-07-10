@@ -2,6 +2,7 @@ from getpass import getpass
 import pymysql
 from fun_admin import * 
 from fun_medico import *
+from fun_paciente import *
 
 def connect_to_database():
     return pymysql.connect(
@@ -10,32 +11,6 @@ def connect_to_database():
         password="",
         database="killcoronavirus"
     )
-
-def menu_administrador():
-    while True:
-        print("\nMenú de administrador:")
-        print("1. Mantenimiento Medicamentos")
-        print("2. Mantenimiento Especialidades")
-        print("3. Mantenimiento Medicos")
-        print("4. Mantenimiento Examenes")
-        print("5. Salir")
-        opcion = input("Seleccione una opción: ")
-
-        if opcion == "1":
-            mantenimiento_medicamentos()
-        elif opcion == "2":
-            mantenimiento_especialidades()
-        elif opcion == "3":
-            mantenimiento_medicos()
-        elif opcion == "4":
-            mantenimiento_examenes()
-        elif opcion == "5":
-            print("Saliendo del sistema...")
-            break
-        else:
-            print("Opción no válida. Por favor, seleccione una opción válida.")
-
-# Funciones de médico
 
 def login():
     print("Bienvenido al sistema de salud KillCoronaVirus.")
@@ -48,7 +23,7 @@ def login():
     connection = connect_to_database()
     cursor = connection.cursor()
 
-    query = "SELECT ID_TipoUsuario FROM login WHERE Usuario = %s AND Password = %s"
+    query = "SELECT ID_TipoUsuario, ID_Profesional FROM login WHERE Usuario = %s AND Password = %s"
     cursor.execute(query, (username, password))
     result = cursor.fetchone()
 
@@ -58,6 +33,17 @@ def login():
             menu_administrador()
         elif tipo_usuario == 2:
             menu_medico()
+        elif tipo_usuario == 3:
+            id_profesional = result[1]
+            # Obtener ID_Paciente desde la tabla paciente
+            query_paciente = "SELECT ID_Paciente FROM paciente WHERE Usuario = %s"
+            cursor.execute(query_paciente, (username,))
+            paciente_result = cursor.fetchone()
+            if paciente_result:
+                rut_paciente = paciente_result[0]
+                menu_paciente(rut_paciente)
+            else:
+                print("No se encontró un paciente asociado a este usuario.")
         else:
             print("Tipo de usuario no válido.")
     else:

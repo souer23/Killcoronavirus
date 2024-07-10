@@ -2,340 +2,269 @@ import pymysql
 import re
 from beautifultable import BeautifulTable
 from login import connect_to_database
-import datetime
+from datetime import datetime
 import getpass
 
+def connect_to_database():
+    # Esta función debe ser implementada según tu método de conexión a la base de datos MySQL.
+    # Aquí un ejemplo genérico:
+    connection = pymysql.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="killcoronavirus",
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    return connection
+
+def mostrar_tabla_datos(tabla, connection):
+    try:
+        with connection.cursor() as cursor:
+            sql = f"SELECT * FROM {tabla}"
+            cursor.execute(sql)
+            if cursor.rowcount > 0:
+                # Crear una tabla bonita para mostrar los datos
+                table = BeautifulTable()
+                table.set_style(BeautifulTable.STYLE_GRID)
+
+                # Obtener nombres de columnas y añadirlos como encabezados
+                column_names = [i[0] for i in cursor.description]
+                table.column_headers = column_names
+                
+                # Obtener todas las filas recuperadas
+                rows = cursor.fetchall()
+                
+                # Agregar filas a la tabla
+                for row in rows:
+                    formatted_row = [str(item) for item in row.values()]  # Convertir los valores en strings
+                    table.append_row(formatted_row)
+                
+                # Mostrar la tabla
+                print(f"Tabla {tabla}:")
+                print(table)
+            else:
+                print(f"No hay datos en la tabla {tabla}.")
+    except pymysql.MySQLError as e:
+        print(f"Error al mostrar la tabla {tabla}: {e}")
+
+def buscar_paciente(connection):
+    try:
+        rut_paciente = input("Ingrese el RUT del paciente (sin puntos ni guión): ").strip()
+        with connection.cursor() as cursor:
+            sql = "SELECT * FROM paciente WHERE RUT = %s"
+            cursor.execute(sql, (rut_paciente,))
+            paciente = cursor.fetchone()
+            if paciente:
+                print("Paciente encontrado:")
+                print(f"ID: {paciente['ID_Paciente']}")
+                print(f"Nombre: {paciente['Nombre']} {paciente['Apellido']}")
+                print(f"Fecha de Nacimiento: {paciente['Fecha_Nac']}")
+                print(f"Teléfono: {paciente['Telefono']}")
+                print(f"Tipo de Usuario: {paciente['ID_TipoUsuario']}")
+                return rut_paciente
+            else:
+                print("No se encontró un paciente con ese RUT.")
+                agregar_paciente(connection, rut_paciente)
+                return rut_paciente
+    except pymysql.MySQLError as e:
+        print("Error al buscar paciente:", e)
+
+def agregar_paciente(connection, rut_paciente):
+    try:
+        print("\nAgregando nuevo paciente al sistema:")
+        nombre = input("Ingrese el nombre del paciente: ")
+        apellido = input("Ingrese el apellido del paciente: ")
+        fecha_nac = input("Ingrese la fecha de nacimiento del paciente (YYYY-MM-DD): ")
+        telefono = input("Ingrese el teléfono del paciente: ")
+        id_tipo_usuario = input("Ingrese el ID del tipo de usuario para el paciente: ")
+
+        # Insertar nuevo paciente en la tabla paciente
+        with connection.cursor() as cursor:
+            sql_insert = """
+                INSERT INTO paciente (RUT, Nombre, Apellido, Fecha_Nac, Telefono, ID_TipoUsuario)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql_insert, (rut_paciente, nombre, apellido, fecha_nac, telefono, id_tipo_usuario))
+            connection.commit()
+
+            print("Paciente agregado con éxito.")
+
+        # Crear credencial de acceso para el paciente
+        while True:
+            nombre_usuario = input("Ingrese el nombre de usuario para el login: ").strip()
+            if not nombre_usuario:
+                print("El nombre de usuario no puede estar vacío.")
+                continue
+            contrasena = input("Ingrese la contraseña para el login: ").strip()
+            if not contrasena:
+                print("La contraseña no puede estar vacía.")
+                continue
+            break
+
+        # Insertar credencial en la tabla login
+        sql_login = """
+            INSERT INTO `login` (`Usuario`, `Password`, `ID_TipoUsuario`)
+            VALUES (%s, %s, %s)
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql_login, (nombre_usuario, contrasena, id_tipo_usuario))
+            connection.commit()
+
+            print("Credencial de acceso creada para el paciente.")
+
+    except pymysql.MySQLError as e:
+        print("Error al agregar paciente:", e)
+
+def crear_ficha_medica(connection, rut_paciente):
+    try:
+        # Conexión a la base de datos
+
+        # Obtener fecha actual
+        fecha_atencion = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Ingreso de datos por el usuario
+        diagnostico = input("Ingrese el diagnóstico: ")
+        anamnesis = input("Ingrese la anamnesis: ")
+
+        mostrar_tabla_datos("paciente", connection)
+
+        # Validar y obtener ID_Paciente válido
+        id_paciente = None
+        while id_paciente is None:
+            try:
+                id_paciente = int(input("Ingrese el ID del paciente: "))
+                with connection.cursor() as cursor:
+                    sql = "SELECT * FROM paciente WHERE ID_Paciente = %s"
+                    cursor.execute(sql, (id_paciente,))
+                    if cursor.rowcount == 0:
+                        print("No existe un paciente con ese ID. Intente nuevamente.")
+                        id_paciente = None
+            except ValueError:
+                print("Ingrese un número válido para el ID del paciente.")
+
+        mostrar_tabla_datos("profesional", connection)
+
+        # Validar y obtener ID_Profesional válido
+        id_profesional = None
+        while id_profesional is None:
+            try:
+                id_profesional = int(input("Ingrese el ID del profesional: "))
+                with connection.cursor() as cursor:
+                    sql = "SELECT * FROM profesional WHERE ID_Profesional = %s"
+                    cursor.execute(sql, (id_profesional,))
+                    if cursor.rowcount == 0:
+                        print("No existe un profesional con ese ID. Intente nuevamente.")
+                        id_profesional = None
+            except ValueError:
+                print("Ingrese un número válido para el ID del profesional.")
+
+        mostrar_tabla_datos("medicamento", connection)
+
+        # Validar y obtener ID_Medicamento válido
+        id_medicamento = None
+        while id_medicamento is None:
+            try:
+                id_medicamento = int(input("Ingrese el ID del medicamento: "))
+                with connection.cursor() as cursor:
+                    sql = "SELECT * FROM medicamento WHERE ID_Medicamento = %s"
+                    cursor.execute(sql, (id_medicamento,))
+                    if cursor.rowcount == 0:
+                        print("No existe un medicamento con ese ID. Intente nuevamente.")
+                        id_medicamento = None
+            except ValueError:
+                print("Ingrese un número válido para el ID del medicamento.")
+
+        
+        mostrar_tabla_datos("examen", connection)
+        
+        # Validar y obtener ID_Examen válido
+        id_examen = None
+        while id_examen is None:
+            try:
+                id_examen = int(input("Ingrese el ID del examen: "))
+                with connection.cursor() as cursor:
+                    sql = "SELECT * FROM examen WHERE ID_Examen = %s"
+                    cursor.execute(sql, (id_examen,))
+                    if cursor.rowcount == 0:
+                        print("No existe un examen con ese ID. Intente nuevamente.")
+                        id_examen = None
+            except ValueError:
+                print("Ingrese un número válido para el ID del examen.")
+
+        # Inserción de datos en la tabla fichamedica
+        with connection.cursor() as cursor:
+            sql_insert = """
+                INSERT INTO fichamedica (Diagnostico, Fecha_Atencion, Anamnesis, ID_Paciente, ID_Profesional, ID_Medicamento, ID_Examen)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql_insert, (diagnostico, fecha_atencion, anamnesis, id_paciente, id_profesional, id_medicamento, id_examen))
+            connection.commit()
+
+            print("Ficha médica creada con éxito.")
+
+    except pymysql.MySQLError as e:
+        print("Error al crear la ficha médica:", e)
 
 def menu_medico():
-    while True:
-        print("\nMenú del médico:")
-        print("1. Mostrar pacientes")
-        print("2. Buscar paciente")
-        print("3. Generar nueva anamnesis")
-        print("4. Generar nuevo diagnóstico")
-        print("5. Recetar exámenes")
-        print("6. Recetar medicamentos")
-        print("7. Mostrar ficha médica")
-        print("8. Salir")
-        opcion = input("Seleccione una opción: ")
+    connection = None
+    try:
+        connection = connect_to_database()
+        while True:
+            print("\nMenú del médico:")
+            print("1. Crear nueva ficha médica")
+            print("2. Buscar paciente")
+            print("3. Buscar ficha médica por RUT del profesional")
+            print("4. Salir")
+            opcion = input("Seleccione una opción: ")
 
-        try:
             if opcion == "1":
-                mostrar_pacientes()
+                crear_ficha_medica(connection, None)  # Pasar None para el rut_paciente
             elif opcion == "2":
-                pacientes = buscar_pacientes()
-                if pacientes:
-                    id_paciente = pacientes[0][0]  # Suponiendo que el primer resultado es el deseado
-                    mostrar_ficha_medica_por_rut(id_paciente)
+                buscar_paciente(connection)
             elif opcion == "3":
-                id_paciente = int(input("Ingrese el ID del paciente: "))
-                id_ficha = int(input("Ingrese el ID de la ficha médica: "))
-                generar_anamnesis(id_paciente, id_ficha)  # Asegúrate de pasar ambos IDs
+                mostrar_pacientes_atendidos_por_profesional(connection)
             elif opcion == "4":
-                id_ficha = int(input("Ingrese el ID de la ficha médica: "))
-                generar_diagnostico(id_ficha)
-            elif opcion == "5":
-                id_ficha = int(input("Ingrese el ID de la ficha médica: "))
-                recetar_examenes(id_ficha)
-            elif opcion == "6":
-                id_ficha = int(input("Ingrese el ID de la ficha médica: "))
-                recetar_medicamentos(id_ficha)
-            elif opcion == "7":
-                id_ficha = int(input("Ingrese el rut del paciente: "))
-                mostrar_ficha_medica_por_rut(id_ficha)
-            elif opcion == "8":
                 print("Saliendo del sistema...")
                 break
             else:
                 print("Opción no válida. Por favor, seleccione una opción válida.")
-        except ValueError:
-            print("Error: Ingrese un número válido para el ID.")
-
-def mostrar_pacientes():
-    connection = connect_to_database()
-    cursor = connection.cursor()
-
-    query = """
-    SELECT ID_Paciente, RUT, Nombre, Apellido, Fecha_Nac, Telefono
-    FROM paciente
-    """
-    
-    cursor.execute(query)
-    pacientes = cursor.fetchall()
-
-    if pacientes:
-        table = BeautifulTable()
-        table.column_headers = ["ID", "RUT", "Nombre", "Apellido", "Fecha Nac", "Teléfono"]
-
-        for paciente in pacientes:
-            table.append_row(paciente)
-
-        print("Listado de pacientes:")
-        print(table)
-    else:
-        print("No hay pacientes registrados.")
-
-    cursor.close()
-    connection.close()
-
-def crear_paciente():
-    try:
-        connection = connect_to_database()
-        with connection.cursor() as cursor:
-            rut = input("Ingrese el RUT del paciente: ")
-            nombre = input("Ingrese el nombre del paciente: ")
-            apellido = input("Ingrese el apellido del paciente: ")
-            fecha_nacimiento = input("Ingrese la fecha de nacimiento del paciente (YYYY-MM-DD): ")
-            telefono = input("Ingrese el teléfono del paciente: ")
-
-            sql_paciente = """
-                INSERT INTO `paciente` (`RUT`, `Nombre`, `Apellido`, `Fecha_Nac`, `Telefono`, `ID_TipoUsuario`)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql_paciente, (rut, nombre, apellido, fecha_nacimiento, telefono, 3))
-            connection.commit()
-
-            id_paciente = cursor.lastrowid
-
-            nombre_usuario = input("Ingrese el nombre de usuario para el login: ")
-            contrasena = input("Ingrese la contraseña para el login: ")
-
-            sql_login = """
-                INSERT INTO `login` (`Usuario`, `Password`, `ID_TipoUsuario`)
-                VALUES (%s, %s, %s)
-            """
-            cursor.execute(sql_login, (nombre_usuario, contrasena, 3))  # Aquí corregimos los parámetros
-            connection.commit()
-
-            print("Paciente y login creados con éxito.")
-            return id_paciente, rut, nombre, apellido  # Devuelve los valores esperados
-
     except pymysql.MySQLError as e:
-        print("Error al crear paciente:", e)
-        return None  # Devuelve None en caso de error
-
+        print("Error de conexión a la base de datos:", e)
     finally:
-        connection.close()
+        if connection and connection.open:
+            connection.close()
 
-def buscar_pacientes(id_medico=None):
+def mostrar_pacientes_atendidos_por_profesional(connection):
     try:
-        connection = connect_to_database()
+        rut_profesional = input("Ingrese el RUT del profesional (sin puntos ni guión): ").strip()
         with connection.cursor() as cursor:
-            if id_medico:
-                sql = """
-                    SELECT p.ID_Paciente, p.RUT, p.Nombre, p.Apellido, fm.ID_FichaMedica
-                    FROM paciente p
-                    JOIN fichamedica fm ON p.ID_Paciente = fm.ID_Paciente
-                    WHERE fm.ID_Profesional = %s
-                """
-                cursor.execute(sql, (id_medico,))
-            else:
-                rut = input("Ingrese el RUT del paciente: ")
-                sql = """
-                    SELECT p.ID_Paciente, p.RUT, p.Nombre, p.Apellido, fm.ID_FichaMedica
-                    FROM paciente p
-                    JOIN fichamedica fm ON p.ID_Paciente = fm.ID_Paciente
-                    WHERE p.RUT = %s
-                """
-                cursor.execute(sql, (rut,))
+            # Buscar ID del profesional por su RUT
+            sql = "SELECT ID_Profesional FROM profesional WHERE RUT = %s"
+            cursor.execute(sql, (rut_profesional,))
+            profesional = cursor.fetchone()
+            if profesional:
+                id_profesional = profesional['ID_Profesional']
 
-            pacientes = cursor.fetchall()
-
-            if not pacientes:
-                print("No se encontraron pacientes.")
-                if input("¿Desea agregar un nuevo paciente? (s/n): ").lower() == 's':
-                    id_paciente, rut, nombre, apellido = crear_paciente()
-                    return [(id_paciente, rut, nombre, apellido, None, None)]
+                # Buscar pacientes atendidos por el profesional
+                sql = """
+                    SELECT p.Nombre, f.Fecha_Atencion, f.Diagnostico
+                    FROM fichamedica f
+                    JOIN paciente p ON f.ID_Paciente = p.ID_Paciente
+                    WHERE f.ID_Profesional = %s
+                """
+                cursor.execute(sql, (id_profesional,))
+                rows = cursor.fetchall()
+                if rows:
+                    table = BeautifulTable()
+                    table.set_style(BeautifulTable.STYLE_GRID)
+                    table.columns.header = ["Nombre del Paciente", "Fecha de Atención", "Diagnóstico"]
+                    for row in rows:
+                        table.rows.append([row['Nombre'], row['Fecha_Atencion'], row['Diagnostico']])
+                    print(table)
                 else:
-                    return []
-
-            print("Pacientes encontrados:")
-            table = BeautifulTable()
-            table.columns.header = ["ID Paciente", "RUT", "Nombre", "Apellido", "ID Ficha"]
-            for paciente in pacientes:
-                table.rows.append(paciente)
-            print(table)
-            return pacientes
-
-    except pymysql.MySQLError as e:
-        print("Error al buscar pacientes:", e)
-
-    finally:
-        connection.close()
-
-def generar_anamnesis(id_paciente):
-    try:
-        connection = connect_to_database()
-        with connection.cursor() as cursor:
-            anamnesis = input("Ingrese la anamnesis del paciente: ")
-
-            sql = """
-                INSERT INTO fichamedica (ID_Paciente, ID_Profesional, Anamnesis)
-                VALUES (%s, %s, %s)
-            """
-            # Aquí asumo que necesitas ID_Profesional también, puedes adaptar según tus necesidades
-            id_profesional = input("Ingrese el ID del profesional: ")
-            cursor.execute(sql, (id_paciente, id_profesional, anamnesis))
-            connection.commit()
-
-            print("Anamnesis generada con éxito.")
-
-    except pymysql.MySQLError as e:
-        print("Error al generar la anamnesis:", e)
-
-    finally:
-        connection.close()
-
-
-def generar_diagnostico(id_ficha):
-    try:
-        connection = connect_to_database()
-        with connection.cursor() as cursor:
-            diagnostico = input("Ingrese el diagnóstico del paciente: ")
-
-            sql = """
-                UPDATE fichamedica
-                SET Diagnostico = %s
-                WHERE ID_FichaMedica = %s
-            """
-            cursor.execute(sql, (diagnostico, id_ficha))
-            connection.commit()
-
-            print("Diagnóstico generado con éxito.")
-
-    except pymysql.MySQLError as e:
-        print("Error al generar el diagnóstico:", e)
-
-    finally:
-        connection.close()
-
-def recetar_examenes(id_ficha):
-    try:
-        connection = connect_to_database()
-
-        # Mostrar los exámenes disponibles
-        with connection.cursor() as cursor:
-            sql_select = "SELECT * FROM examen"
-            cursor.execute(sql_select)
-            examenes = cursor.fetchall()
-
-            if examenes:
-                table = BeautifulTable()
-                table.column_headers = ["ID Examen", "Nombre"]
-                for examen in examenes:
-                    table.append_row([examen[0], examen[1]])
-
-                print("Exámenes disponibles:")
-                print(table)
+                    print("No se encontraron pacientes atendidos por este profesional.")
             else:
-                print("No hay exámenes disponibles.")
-
-        # Pedir al usuario que ingrese el examen a recetar
-        examen_id = input("Ingrese el ID del examen a recetar: ")
-
-        # Actualizar la ficha médica con el examen recetado
-        with connection.cursor() as cursor:
-            sql_update = """
-                UPDATE fichamedica
-                SET ID_Examen = %s
-                WHERE ID_FichaMedica = %s
-            """
-            cursor.execute(sql_update, (examen_id, id_ficha))
-            connection.commit()
-
-            print("Examen recetado con éxito.")
-
+                print("No se encontró un profesional con ese RUT.")
     except pymysql.MySQLError as e:
-        print("Error al recetar el examen:", e)
-
-    finally:
-        connection.close()
-
-def recetar_medicamentos(id_ficha):
-    try:
-        connection = connect_to_database()
-
-        # Mostrar los medicamentos disponibles
-        with connection.cursor() as cursor:
-            sql_select = "SELECT * FROM medicamentos"
-            cursor.execute(sql_select)
-            medicamentos = cursor.fetchall()
-
-            if medicamentos:
-                table = BeautifulTable()
-                table.column_headers = ["ID Medicamento", "Nombre"]
-                for medicamento in medicamentos:
-                    table.append_row([medicamento[0], medicamento[1]])
-
-                print("Medicamentos disponibles:")
-                print(table)
-            else:
-                print("No hay medicamentos disponibles.")
-
-        # Pedir al usuario que ingrese el medicamento a recetar
-        medicamento_id = input("Ingrese el ID del medicamento a recetar: ")
-
-        # Actualizar la ficha médica con el medicamento recetado
-        with connection.cursor() as cursor:
-            sql_update = """
-                UPDATE fichamedica
-                SET ID_Medicamento = %s
-                WHERE ID_FichaMedica = %s
-            """
-            cursor.execute(sql_update, (medicamento_id, id_ficha))
-            connection.commit()
-
-            print("Medicamento recetado con éxito.")
-
-    except pymysql.MySQLError as e:
-        print("Error al recetar el medicamento:", e)
-
-    finally:
-        connection.close()
-
-def mostrar_ficha_medica_por_rut(rut):
-    try:
-        connection = connect_to_database()
-        with connection.cursor() as cursor:
-            # Buscar ID del paciente por rut
-            sql_id_paciente = """
-                SELECT ID_Paciente
-                FROM paciente
-                WHERE RUT = %s
-            """
-            cursor.execute(sql_id_paciente, (rut,))
-            paciente = cursor.fetchone()
-
-            if not paciente:
-                print("No se encontró ningún paciente con ese rut.")
-                return
-
-            id_paciente = paciente[0]  # Acceder al primer elemento de la tupla
-
-            # Consultar fichas médicas del paciente
-            sql_fichas = """
-                SELECT ID_FichaMedica, Diagnostico, Fecha_Atencion, Anamnesis, ID_Medicamento, ID_Examen
-                FROM fichamedica
-                WHERE ID_Paciente = %s
-            """
-            cursor.execute(sql_fichas, (id_paciente,))
-            fichas_medicas = cursor.fetchall()
-
-            if not fichas_medicas:
-                print("No se encontraron fichas médicas para este paciente.")
-            else:
-                # Crear una tabla con BeautifulTable
-                table = BeautifulTable()
-                table.column_headers = ["ID Ficha Médica", "Diagnóstico", "Fecha de Atención", "Anamnesis", "ID Medicamento", "ID Examen"]
-
-                for ficha in fichas_medicas:
-                    table.append_row(ficha)
-
-                print("Fichas Médicas encontradas:")
-                print(table)
-
-    except pymysql.MySQLError as e:
-        print("Error al mostrar la ficha médica:", e)
-
-    finally:
-        connection.close()
+        print("Error al buscar pacientes atendidos por profesional:", e)
