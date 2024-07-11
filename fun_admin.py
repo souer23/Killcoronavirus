@@ -95,7 +95,8 @@ def mostrar_medicamentos():
             cursor.execute(sql)
             medicamentos = cursor.fetchall()
             print("Listado de medicamentos:")
-            table = BeautifulTable()
+            table = BeautifulTable(maxwidth=120)
+            table.set_style(BeautifulTable.STYLE_GRID)
             table.columns.header = ["ID", "Nombre", "Descripción"]
             for medicamento in medicamentos:
                 table.rows.append([medicamento[0], medicamento[1], medicamento[2]])
@@ -198,7 +199,8 @@ def mostrar_especialidades():
             cursor.execute(sql)
             especialidades = cursor.fetchall()
             print("Listado de especialidades:")
-            table = BeautifulTable()
+            table = BeautifulTable(maxwidth=120)
+            table.set_style(BeautifulTable.STYLE_GRID)
             table.columns.header = ["ID", "Nombre Especialidad"]
             for especialidad in especialidades:
                 table.rows.append([especialidad[0], especialidad[1]])
@@ -354,7 +356,8 @@ def mostrar_medicos():
             cursor.execute(sql)
             profesionales = cursor.fetchall()
             print("Listado de profesionales:")
-            table = BeautifulTable()
+            table = BeautifulTable(maxwidth=160)
+            table.set_style(BeautifulTable.STYLE_GRID)
             table.columns.header = ["ID", "RUT", "Nombre", "Apellido", "Teléfono", "Especialidades"]
             for profesional in profesionales:
                 table.rows.append(profesional)
@@ -475,7 +478,8 @@ def mostrar_examenes():
             cursor.execute(sql)
             examenes = cursor.fetchall()
             print("Listado de exámenes:")
-            table = BeautifulTable()
+            table = BeautifulTable(maxwidth=120)
+            table.set_style(BeautifulTable.STYLE_GRID)
             table.columns.header = ["ID", "Nombre", "Descripción"]
             for examen in examenes:
                 table.rows.append([examen[0], examen[1], examen[2]])

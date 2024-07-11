@@ -48,47 +48,51 @@ def mostrar_tabla_datos(tabla, connection):
     except pymysql.MySQLError as e:
         print(f"Error al mostrar la tabla {tabla}: {e}")
 
-def buscar_paciente(connection):
+def buscar_paciente(connection, username):
     try:
         rut_paciente = input("Ingrese el RUT del paciente (sin puntos ni guión): ").strip()
+
+        # Verificar si el paciente ya existe
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM paciente WHERE RUT = %s"
+            sql = "SELECT ID_Paciente, Nombre, Apellido, IFNULL(Fecha_Nac, '-') AS Fecha_Nac, Telefono FROM paciente WHERE RUT = %s"
             cursor.execute(sql, (rut_paciente,))
             paciente = cursor.fetchone()
+
             if paciente:
-                print("Paciente encontrado:")
-                print(f"ID: {paciente['ID_Paciente']}")
-                print(f"Nombre: {paciente['Nombre']} {paciente['Apellido']}")
-                print(f"Fecha de Nacimiento: {paciente['Fecha_Nac']}")
-                print(f"Teléfono: {paciente['Telefono']}")
-                print(f"Tipo de Usuario: {paciente['ID_TipoUsuario']}")
-                return rut_paciente
+                # Si el paciente existe, mostrar información en tabla
+                table = BeautifulTable()
+                table.set_style(BeautifulTable.STYLE_GRID)
+                table.column_headers = ["ID_Paciente", "Nombre", "Apellido", "Fecha de Nacimiento", "Teléfono"]
+
+                # Convertir fecha de nacimiento si no es "-"
+                fecha_nac = paciente["Fecha_Nac"]
+                if fecha_nac != "-":
+                    fecha_nac = datetime.strptime(fecha_nac, '%Y-%m-%d').strftime('%d-%m-%Y')
+
+                table.append_row([paciente["ID_Paciente"], paciente["Nombre"], paciente["Apellido"], fecha_nac, paciente["Telefono"]])
+                print(f"Información del paciente con RUT {rut_paciente}:")
+                print(table)
             else:
-                print("No se encontró un paciente con ese RUT.")
-                agregar_paciente(connection, rut_paciente)
-                return rut_paciente
+                # Si el paciente no existe, preguntar si se desea agregar
+                respuesta = input("El paciente no está registrado. ¿Desea agregarlo? (s/n): ").strip().lower()
+                if respuesta == 's':
+                    agregar_paciente(connection, rut_paciente, username)
+                elif respuesta == 'n':
+                    print("Volviendo al menú médico.")
+                else:
+                    print("Respuesta no válida. Volviendo al menú médico.")
+
     except pymysql.MySQLError as e:
         print("Error al buscar paciente:", e)
 
-def agregar_paciente(connection, rut_paciente):
+def agregar_paciente(connection, rut_paciente, username_medico):
     try:
         print("\nAgregando nuevo paciente al sistema:")
         nombre = input("Ingrese el nombre del paciente: ")
         apellido = input("Ingrese el apellido del paciente: ")
         fecha_nac = input("Ingrese la fecha de nacimiento del paciente (YYYY-MM-DD): ")
         telefono = input("Ingrese el teléfono del paciente: ")
-        id_tipo_usuario = input("Ingrese el ID del tipo de usuario para el paciente: ")
-
-        # Insertar nuevo paciente en la tabla paciente
-        with connection.cursor() as cursor:
-            sql_insert = """
-                INSERT INTO paciente (RUT, Nombre, Apellido, Fecha_Nac, Telefono, ID_TipoUsuario)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql_insert, (rut_paciente, nombre, apellido, fecha_nac, telefono, id_tipo_usuario))
-            connection.commit()
-
-            print("Paciente agregado con éxito.")
+        id_tipo_usuario = input("Ingrese el ID del tipo de usuario para el paciente (3): ")
 
         # Crear credencial de acceso para el paciente
         while True:
@@ -101,6 +105,17 @@ def agregar_paciente(connection, rut_paciente):
                 print("La contraseña no puede estar vacía.")
                 continue
             break
+
+        # Insertar nuevo paciente en la tabla paciente
+        with connection.cursor() as cursor:
+            sql_insert = """
+                INSERT INTO paciente (RUT, Nombre, Apellido, Fecha_Nac, Telefono, ID_TipoUsuario, Usuario)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql_insert, (rut_paciente, nombre, apellido, fecha_nac, telefono, id_tipo_usuario, nombre_usuario))
+            connection.commit()
+
+            print("Paciente agregado con éxito.")
 
         # Insertar credencial en la tabla login
         sql_login = """
@@ -206,7 +221,7 @@ def crear_ficha_medica(connection, rut_paciente):
     except pymysql.MySQLError as e:
         print("Error al crear la ficha médica:", e)
 
-def menu_medico():
+def menu_medico(username):
     connection = None
     try:
         connection = connect_to_database()
@@ -221,7 +236,7 @@ def menu_medico():
             if opcion == "1":
                 crear_ficha_medica(connection, None)  # Pasar None para el rut_paciente
             elif opcion == "2":
-                buscar_paciente(connection)
+                buscar_paciente(connection, username)
             elif opcion == "3":
                 mostrar_pacientes_atendidos_por_profesional(connection)
             elif opcion == "4":
@@ -259,8 +274,16 @@ def mostrar_pacientes_atendidos_por_profesional(connection):
                     table = BeautifulTable()
                     table.set_style(BeautifulTable.STYLE_GRID)
                     table.columns.header = ["Nombre del Paciente", "Fecha de Atención", "Diagnóstico"]
+                    
+                    # Formatear las fechas antes de agregarlas a la tabla
                     for row in rows:
-                        table.rows.append([row['Nombre'], row['Fecha_Atencion'], row['Diagnostico']])
+                        formatted_row = [
+                            row['Nombre'],
+                            row['Fecha_Atencion'].strftime('%d-%m-%Y'),  # Formatear directamente el objeto date
+                            row['Diagnostico']
+                        ]
+                        table.rows.append(formatted_row)
+                    
                     print(table)
                 else:
                     print("No se encontraron pacientes atendidos por este profesional.")

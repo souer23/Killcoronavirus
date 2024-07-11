@@ -32,7 +32,7 @@ def login():
         if tipo_usuario == 1:
             menu_administrador()
         elif tipo_usuario == 2:
-            menu_medico()
+            menu_medico(username)  # Pasar 'username' al menú del médico
         elif tipo_usuario == 3:
             id_profesional = result[1]
             # Obtener ID_Paciente desde la tabla paciente
@@ -41,7 +41,7 @@ def login():
             paciente_result = cursor.fetchone()
             if paciente_result:
                 rut_paciente = paciente_result[0]
-                menu_paciente(rut_paciente)
+                menu_paciente(rut_paciente, username)  # Pasar 'username' al menú del paciente
             else:
                 print("No se encontró un paciente asociado a este usuario.")
         else:
